@@ -1,6 +1,10 @@
 pipeline {
   agent any
 
+  tools {
+    sonarQubeScanner 'SonarScanner'
+  }
+
   environment {
     SONAR_HOST_URL = "http://3.128.205.112:9000"
     SONAR_TOKEN = credentials('Sonarq')
@@ -23,7 +27,6 @@ pipeline {
 
           pip install --upgrade pip
 
-          # Dependencias exactas SIN requirements.txt
           pip install "Flask==2.2.5" \
                       "Werkzeug==2.2.3" \
                       "Jinja2==3.1.2" \
