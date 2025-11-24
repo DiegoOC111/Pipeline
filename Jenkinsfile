@@ -2,7 +2,9 @@ pipeline {
   agent any
 
   tools {
-    sonarQubeScanner 'SonarScanner'
+    // Tu instalación de SonarQube Scanner
+    // Debe coincidir con el nombre configurado en Jenkins → Global Tool Configuration
+    sonarScanner 'Sonar'
   }
 
   environment {
@@ -10,9 +12,13 @@ pipeline {
     SONAR_TOKEN = credentials('Sonarq')
     PYTHON_SERVER_URL = "http://3.128.205.112:5000/upload"
     NVD_API_KEY = credentials('APiNIST')
+
+    // Toma la ruta real del scanner
+    SCANNER_HOME = tool 'Sonar'
   }
 
   stages {
+
     stage('Checkout') {
       steps {
         git url: 'https://github.com/DiegoOC111/Pipeline.git', branch: 'main'
@@ -39,13 +45,13 @@ pipeline {
     stage('SonarQube Analysis') {
       steps {
         withSonarQubeEnv('SonarServer') {
-          sh '''
-            sonar-scanner \
+          sh """
+            ${SCANNER_HOME}/bin/sonar-scanner \
               -Dsonar.projectKey=myproject \
               -Dsonar.sources=. \
               -Dsonar.host.url=${SONAR_HOST_URL} \
               -Dsonar.login=${SONAR_TOKEN}
-          '''
+          """
         }
       }
     }
