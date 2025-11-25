@@ -3,7 +3,8 @@ pipeline {
 
     environment {
         PROJECT_NAME = "pipeline-test"
-        SONARQUBE_TOKEN = credentials('Sonarq') // tu credencial
+        SONARQUBE_URL = "http://3.128.205.112:9000"
+        SONARQUBE_TOKEN = credentials('Sonarq') // usa tu credencial en Jenkins
         TARGET_URL = "http://3.128.205.112:5000"
     }
 
@@ -32,15 +33,16 @@ pipeline {
         stage('Python Security Audit') {
             steps {
                 script {
-                    sh '''
+                    // Capturamos el código de salida para no bloquear el pipeline
+                    def status = sh(script: '''
                         . venv/bin/activate
                         pip install pip-audit
                         mkdir -p dependency-check-report
-                    '''
-                    try {
-                        sh '. venv/bin/activate && pip-audit -f markdown -o dependency-check-report/pip-audit.md'
-                    } catch (Exception e) {
-                        echo "pip-audit encontró vulnerabilidades, pero continuamos: ${e.getMessage()}"
+                        pip-audit -f markdown -o dependency-check-report/pip-audit.md
+                    ''', returnStatus: true)
+
+                    if (status != 0) {
+                        echo "pip-audit encontró vulnerabilidades, pero continuamos."
                     }
                 }
             }
@@ -49,14 +51,14 @@ pipeline {
         stage('SonarQube Analysis') {
             steps {
                 script {
-                    def scannerHome = tool 'SonarQubeScanner'
+                    def scannerHome = tool 'SonarQubeScanner' // nombre del SonarQube Scanner que configuraste
                     withSonarQubeEnv('SonarQubeScanner') {
                         sh """
                             ${scannerHome}/bin/sonar-scanner \
                                 -Dsonar.projectKey=$PROJECT_NAME \
                                 -Dsonar.sources=. \
-                                -Dsonar.host.url=${SONARQUBE_URL} \
-                                -Dsonar.login=${SONARQUBE_TOKEN}
+                                -Dsonar.host.url=$SONARQUBE_URL \
+                                -Dsonar.login=$SONARQUBE_TOKEN
                         """
                     }
                 }
