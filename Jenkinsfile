@@ -69,18 +69,11 @@ pipeline {
         }
 
         stage('Dependency Check') {
+            environment {
+                NVD_API_KEY = credentials('NIST')
+            }
             steps {
-                withCredentials([string(credentialsId: 'NIST', variable: 'NVD_API_KEY')]) {
-                    script {
-                        def args = "--scan . --format HTML --out dependency-check-report " +
-                                   "--enableExperimental --enableRetired --nvdApiKey=" + NVD_API_KEY
-
-                        dependencyCheck(
-                            additionalArguments: args,
-                            odcInstallation: 'DependencyCheck'
-                        )
-                    }
-                }
+                dependencyCheck additionalArguments: "--scan . --format HTML --out dependency-check-report --enableExperimental --enableRetired --nvdApiKey ${NVD_API_KEY}", odcInstallation: 'DependencyCheck'
             }
         }
 
