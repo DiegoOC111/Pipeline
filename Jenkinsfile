@@ -4,11 +4,11 @@ pipeline {
     environment {
         PROJECT_NAME = "pipeline-test"
         SONARQUBE_URL = "http://3.128.205.112:9000"
-        SONARQUBE_TOKEN = credentials('Sonarq') // tu credencial
         TARGET_URL = "http://172.23.41.49:5000"
     }
 
     stages {
+
         stage('Install Python') {
             steps {
                 sh '''
@@ -24,7 +24,6 @@ pipeline {
                     python3 -m venv venv
                     . venv/bin/activate
                     pip install --upgrade pip
-                    # Dependencias exactas de tu proyecto
                     pip install Flask==2.2.5 Werkzeug==2.2.3 Jinja2==3.1.2 itsdangerous==2.1.2 click==8.1.3
                 '''
             }
@@ -32,12 +31,20 @@ pipeline {
 
         stage('Python Security Audit') {
             steps {
+                sh '''
+                    . venv/bin/activate
+                    pip install pip-audit
+                    mkdir -p dependency-check-report
+                '''
+
                 script {
-                    sh '. venv/bin/activate && pip install pip-audit'
-                    sh 'mkdir -p dependency-check-report'
-                    def exitCode = sh(script: '. venv/bin/activate && pip-audit -f markdown -o dependency-check-report/pip-audit.md', returnStatus: true)
+                    def exitCode = sh(
+                        script: '. venv/bin/activate && pip-audit -f markdown -o dependency-check-report/pip-audit.md',
+                        returnStatus: true
+                    )
+
                     if (exitCode != 0) {
-                        echo "pip-audit encontró vulnerabilidades, pero continuamos."
+                        echo "pip-audit encontró vulnerabilidades, pero se continúa."
                     } else {
                         echo "pip-audit no encontró vulnerabilidades."
                     }
@@ -52,10 +59,9 @@ pipeline {
                     withSonarQubeEnv('SonarServer') {
                         sh """
                             ${scannerHome}/bin/sonar-scanner \
-                                -Dsonar.projectKey=$PROJECT_NAME \
+                                -Dsonar.projectKey=${PROJECT_NAME} \
                                 -Dsonar.sources=. \
-                                -Dsonar.host.url=$SONARQUBE_URL \
-                                -Dsonar.login=$SONARQUBE_TOKEN
+                                -Dsonar.host.url=${SONARQUBE_URL}
                         """
                     }
                 }
@@ -63,11 +69,18 @@ pipeline {
         }
 
         stage('Dependency Check') {
-            environment {
-                NVD_API_KEY = credentials('APiNIST') // tu clave NVD
-            }
             steps {
-                dependencyCheck additionalArguments: "--scan . --format HTML --out dependency-check-report --enableExperimental --enableRetired --nvdApiKey ${NVD_API_KEY}", odcInstallation: 'DependencyCheck'
+                withCredentials([string(credentialsId: 'APiNIST', variable: 'NVD_API_KEY')]) {
+
+                    // ⚠️ SIN interpolación insegura — concatenado seguro
+                    def args = "--scan . --format HTML --out dependency-check-report " +
+                               "--enableExperimental --enableRetired --nvdApiKey=" + NVD_API_KEY
+
+                    dependencyCheck(
+                        additionalArguments: args,
+                        odcInstallation: 'DependencyCheck'
+                    )
+                }
             }
         }
 
