@@ -67,6 +67,7 @@ pipeline {
                 }
             }
         }
+
         stage('Dependency Check') {
             environment {
                 NVD_API_KEY = credentials('nvdApiKey')
@@ -74,7 +75,9 @@ pipeline {
             steps {
                 dependencyCheck additionalArguments: "--scan . --format HTML --out dependency-check-report --enableExperimental --enableRetired --nvdApiKey ${NVD_API_KEY}", odcInstallation: 'DependencyCheck'
             }
-        
+        }  // ← ESTA LLAVE FALTABA
+    }
+
     post {
         always {
             archiveArtifacts artifacts: 'dependency-check-report/**', fingerprint: true
