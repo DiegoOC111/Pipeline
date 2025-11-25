@@ -70,7 +70,7 @@ pipeline {
 
         stage('Dependency Check') {
             steps {
-                withCredentials([string(credentialsId: 'APiNIST', variable: 'NVD_API_KEY')]) {
+                withCredentials([string(credentialsId: 'NIST', variable: 'NVD_API_KEY')]) {
                     script {
                         def args = "--scan . --format HTML --out dependency-check-report " +
                                    "--enableExperimental --enableRetired --nvdApiKey=" + NVD_API_KEY
