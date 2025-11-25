@@ -69,13 +69,14 @@ pipeline {
         }
 
         stage('Dependency Check') {
-            environment {
-                NVD_API_KEY = credentials('NT')
-            }
             steps {
-                dependencyCheck additionalArguments: "--scan . --format HTML --out dependency-check-report --enableExperimental --enableRetired --nvdApiKey ${NVD_API_KEY}", odcInstallation: 'DependencyCheck'
+                dependencyCheck(
+                    additionalArguments: "--scan . --format HTML --out dependency-check-report --enableExperimental --enableRetired --nvdApiKey eafa3341-5ae9-46a7-9673-131a55fad55f",
+                    odcInstallation: 'DependencyCheck'
+                )
             }
         }
+    }  //  ←✔ Cierre correcto de `stages`
 
     post {
         always {
