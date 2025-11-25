@@ -3,9 +3,8 @@ pipeline {
 
     environment {
         PROJECT_NAME = "pipeline-test"
-        SONARQUBE_URL = "http://3.128.205.112:9000"
-        SONARQUBE_TOKEN = credentials('Sonarq') // usa tu credencial
-        TARGET_URL = "http://3.128.205.112:5000"
+        SONARQUBE_TOKEN = credentials('Sonarq') // tu credencial de SonarQube
+        TARGET_URL = "http://172.23.41.49:5000"
     }
 
     stages {
@@ -44,13 +43,12 @@ pipeline {
         stage('SonarQube Analysis') {
             steps {
                 script {
-                    def scannerHome = tool 'SonarQubeScanner'
+                    def scannerHome = tool 'SonarQubeScanner' // Nombre del servidor SonarQube configurado en Jenkins
                     withSonarQubeEnv('SonarQubeScanner') {
                         sh """
                             ${scannerHome}/bin/sonar-scanner \
                                 -Dsonar.projectKey=$PROJECT_NAME \
                                 -Dsonar.sources=. \
-                                -Dsonar.host.url=$SONARQUBE_URL \
                                 -Dsonar.login=$SONARQUBE_TOKEN
                         """
                     }
