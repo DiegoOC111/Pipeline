@@ -3,8 +3,8 @@ pipeline {
 
     environment {
         PROJECT_NAME = "pipeline-test"
-        SONARQUBE_TOKEN = credentials('Sonarq') // tu credencial de SonarQube
-        TARGET_URL = "http://172.23.41.49:5000"
+        SONARQUBE_TOKEN = credentials('Sonarq') // tu credencial
+        TARGET_URL = "http://3.128.205.112:5000"
     }
 
     stages {
@@ -31,25 +31,32 @@ pipeline {
 
         stage('Python Security Audit') {
             steps {
-                sh '''
-                    . venv/bin/activate
-                    pip install pip-audit
-                    mkdir -p dependency-check-report
-                    pip-audit -f markdown -o dependency-check-report/pip-audit.md || true
-                '''
+                script {
+                    sh '''
+                        . venv/bin/activate
+                        pip install pip-audit
+                        mkdir -p dependency-check-report
+                    '''
+                    try {
+                        sh '. venv/bin/activate && pip-audit -f markdown -o dependency-check-report/pip-audit.md'
+                    } catch (Exception e) {
+                        echo "pip-audit encontró vulnerabilidades, pero continuamos: ${e.getMessage()}"
+                    }
+                }
             }
         }
 
         stage('SonarQube Analysis') {
             steps {
                 script {
-                    def scannerHome = tool 'SonarQubeScanner' // Nombre del servidor SonarQube configurado en Jenkins
+                    def scannerHome = tool 'SonarQubeScanner'
                     withSonarQubeEnv('SonarQubeScanner') {
                         sh """
                             ${scannerHome}/bin/sonar-scanner \
                                 -Dsonar.projectKey=$PROJECT_NAME \
                                 -Dsonar.sources=. \
-                                -Dsonar.login=$SONARQUBE_TOKEN
+                                -Dsonar.host.url=${SONARQUBE_URL} \
+                                -Dsonar.login=${SONARQUBE_TOKEN}
                         """
                     }
                 }
