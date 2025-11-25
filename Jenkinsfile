@@ -3,8 +3,8 @@ pipeline {
 
     environment {
         PROJECT_NAME = "pipeline-test"
+        SONARQUBE_TOKEN = credentials('Sonarq') // tu credencial
         SONARQUBE_URL = "http://3.128.205.112:9000"
-        SONARQUBE_TOKEN = credentials('Sonarq') // usa tu credencial en Jenkins
         TARGET_URL = "http://3.128.205.112:5000"
     }
 
@@ -33,7 +33,6 @@ pipeline {
         stage('Python Security Audit') {
             steps {
                 script {
-                    // Capturamos el código de salida para no bloquear el pipeline
                     def status = sh(script: '''
                         . venv/bin/activate
                         pip install pip-audit
@@ -51,7 +50,7 @@ pipeline {
         stage('SonarQube Analysis') {
             steps {
                 script {
-                    def scannerHome = tool 'SonarQubeScanner' // nombre del SonarQube Scanner que configuraste
+                    def scannerHome = tool 'SonarQubeScanner'
                     withSonarQubeEnv('SonarQubeScanner') {
                         sh """
                             ${scannerHome}/bin/sonar-scanner \
