@@ -4,7 +4,7 @@ pipeline {
     environment {
         PROJECT_NAME = "pipeline-test"
         SONARQUBE_URL = "http://3.128.205.112:9000"
-        TARGET_URL = "http://172.23.41.49:5000"
+        TARGET_URL = "http://3.128.205.112:5000"
     }
 
     stages {
@@ -71,15 +71,15 @@ pipeline {
         stage('Dependency Check') {
             steps {
                 withCredentials([string(credentialsId: 'APiNIST', variable: 'NVD_API_KEY')]) {
+                    script {
+                        def args = "--scan . --format HTML --out dependency-check-report " +
+                                   "--enableExperimental --enableRetired --nvdApiKey=" + NVD_API_KEY
 
-                    // ⚠️ SIN interpolación insegura — concatenado seguro
-                    def args = "--scan . --format HTML --out dependency-check-report " +
-                               "--enableExperimental --enableRetired --nvdApiKey=" + NVD_API_KEY
-
-                    dependencyCheck(
-                        additionalArguments: args,
-                        odcInstallation: 'DependencyCheck'
-                    )
+                        dependencyCheck(
+                            additionalArguments: args,
+                            odcInstallation: 'DependencyCheck'
+                        )
+                    }
                 }
             }
         }
