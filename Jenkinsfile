@@ -67,16 +67,14 @@ pipeline {
                 }
             }
         }
-
-       stage('Dependency Check') {
+        stage('Dependency Check') {
             environment {
-                NVD_API_KEY = credentials('NT')
+                NVD_API_KEY = credentials('nvdApiKey')
             }
             steps {
                 dependencyCheck additionalArguments: "--scan . --format HTML --out dependency-check-report --enableExperimental --enableRetired --nvdApiKey ${NVD_API_KEY}", odcInstallation: 'DependencyCheck'
             }
         }
-
     post {
         always {
             archiveArtifacts artifacts: 'dependency-check-report/**', fingerprint: true
