@@ -4,7 +4,7 @@ pipeline {
     environment {
         PROJECT_NAME = "pipeline-test"
         SONARQUBE_URL = "http://3.128.205.112:9000"
-        TARGET_URL = "http://3.128.205.112:5000"
+        TARGET_URL = "http://172.31.15.234:5000" //  ←✔ ip del servidor cuando lo instalas
     }
 
     stages {
@@ -55,7 +55,7 @@ pipeline {
         stage('SonarQube Analysis') {
             steps {
                 script {
-                    def scannerHome = tool 'SonarQubeScanner'
+                    def scannerHome = tool 'SonarQubeScanner'  //  ←✔ Nombre de la instalacion
                     withSonarQubeEnv('SonarServer') {
                         sh """
                             ${scannerHome}/bin/sonar-scanner \
@@ -69,10 +69,10 @@ pipeline {
         }
 
         stage('Dependency Check') {
-            steps {
+            steps {//  ←✔ Copia y pega la key en api key
                 dependencyCheck(
-                    additionalArguments: "--scan . --format HTML --out dependency-check-report --enableExperimental --enableRetired --nvdApiKey eafa3341-5ae9-46a7-9673-131a55fad55f",
-                    odcInstallation: 'DependencyCheck'
+                    additionalArguments: "--scan . --format HTML --out dependency-check-report --enableExperimental --enableRetired --nvdApiKey eafa3341-5ae9-46a7-9673-131a55fad55f", 
+                    odcInstallation: 'DependencyCheck'  //  ←✔ Nombre de la instalacion
                 )
             }
         }
