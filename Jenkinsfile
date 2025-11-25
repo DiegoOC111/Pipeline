@@ -2,11 +2,10 @@ pipeline {
     agent any
 
     environment {
-        PROJECT_NAME = "myproject"  // Nombre de tu proyecto
-        SONARQUBE_URL = "http://3.128.205.112:9000"
-        SONARQUBE_TOKEN = credentials('Sonarq') // Token de SonarQube en Jenkins
-        TARGET_URL = "http://172.23.41.49:5000" // Tal como en la guía
-        NVD_API_KEY = credentials('APiNIST')    // Tu API Key NVD
+        PROJECT_NAME = "pipeline-test"
+        SONARQUBE_URL = "http://sonarqube:9000"
+        SONARQUBE_TOKEN = credentials('Sonarq') // usa tu credencial
+        TARGET_URL = "http://172.23.41.49:5000"
     }
 
     stages {
@@ -18,14 +17,15 @@ pipeline {
                 '''
             }
         }
-        
+
         stage('Setup Environment') {
             steps {
                 sh '''
                     python3 -m venv venv
                     . venv/bin/activate
                     pip install --upgrade pip
-                    pip install -r requirements.txt
+                    # Dependencias exactas de tu proyecto
+                    pip install Flask==2.2.5 Werkzeug==2.2.3 Jinja2==3.1.2 itsdangerous==2.1.2 click==8.1.3
                 '''
             }
         }
@@ -36,13 +36,11 @@ pipeline {
                     . venv/bin/activate
                     pip install pip-audit
                     mkdir -p dependency-check-report
-                    pip-audit -r requirements.txt -f markdown -o dependency-check-report/pip-audit.md || true
-                    pip install markdown
-                    python -m markdown dependency-check-report/pip-audit.md > dependency-check-report/pip-audit.html
+                    pip-audit -f markdown -o dependency-check-report/pip-audit.md || true
                 '''
             }
         }
-        
+
         stage('SonarQube Analysis') {
             steps {
                 script {
@@ -61,6 +59,9 @@ pipeline {
         }
 
         stage('Dependency Check') {
+            environment {
+                NVD_API_KEY = credentials('APiNIST') // tu clave NVD
+            }
             steps {
                 dependencyCheck additionalArguments: "--scan . --format HTML --out dependency-check-report --enableExperimental --enableRetired --nvdApiKey ${NVD_API_KEY}", odcInstallation: 'DependencyCheck'
             }
@@ -76,15 +77,19 @@ pipeline {
                     reportFiles: 'dependency-check-report.html',
                     reportName: 'OWASP Dependency Check Report'
                 ])
-                publishHTML([
-                    allowMissing: false,
-                    alwaysLinkToLastBuild: true,
-                    keepAll: true,
-                    reportDir: 'dependency-check-report',
-                    reportFiles: 'pip-audit.html',
-                    reportName: 'Python Security Audit Report'
-                ])
             }
+        }
+    }
+
+    post {
+        always {
+            archiveArtifacts artifacts: 'dependency-check-report/**', fingerprint: true
+        }
+        success {
+            echo "Build success"
+        }
+        failure {
+            echo "Build failed"
         }
     }
 }
