@@ -3,9 +3,9 @@ pipeline {
 
     environment {
         PROJECT_NAME = "pipeline-test"
-        SONARQUBE_TOKEN = credentials('Sonarq') // tu credencial
         SONARQUBE_URL = "http://3.128.205.112:9000"
-        TARGET_URL = "http://3.128.205.112:5000"
+        SONARQUBE_TOKEN = credentials('Sonarq') // tu credencial
+        TARGET_URL = "http://172.23.41.49:5000"
     }
 
     stages {
@@ -33,15 +33,13 @@ pipeline {
         stage('Python Security Audit') {
             steps {
                 script {
-                    def status = sh(script: '''
-                        . venv/bin/activate
-                        pip install pip-audit
-                        mkdir -p dependency-check-report
-                        pip-audit -f markdown -o dependency-check-report/pip-audit.md
-                    ''', returnStatus: true)
-
-                    if (status != 0) {
+                    sh '. venv/bin/activate && pip install pip-audit'
+                    sh 'mkdir -p dependency-check-report'
+                    def exitCode = sh(script: '. venv/bin/activate && pip-audit -f markdown -o dependency-check-report/pip-audit.md', returnStatus: true)
+                    if (exitCode != 0) {
                         echo "pip-audit encontró vulnerabilidades, pero continuamos."
+                    } else {
+                        echo "pip-audit no encontró vulnerabilidades."
                     }
                 }
             }
