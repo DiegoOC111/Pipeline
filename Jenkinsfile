@@ -68,18 +68,12 @@ pipeline {
             }
         }
 
-        stage('Dependency Check') {
+       stage('Dependency Check') {
+            environment {
+                NVD_API_KEY = credentials('NT')
+            }
             steps {
-                script {
-                    // Inyecta la credencial 'NIST' de forma segura como una variable llamada 'API_KEY_SECURE'
-                    withCredentials([string(credentialsId: 'NT', variable: 'API_KEY_SECURE')]) {
-                        dependencyCheck 
-                            additionalArguments: "--scan . --format HTML --out dependency-check-report --enableExperimental --enableRetired", 
-                            // Uso el parámetro dedicado del plugin para la clave
-                            nvdApiKey: API_KEY_SECURE, 
-                            odcInstallation: 'DependencyCheck'
-                    }
-                }
+                dependencyCheck additionalArguments: "--scan . --format HTML --out dependency-check-report --enableExperimental --enableRetired --nvdApiKey ${NVD_API_KEY}", odcInstallation: 'DependencyCheck'
             }
         }
 
