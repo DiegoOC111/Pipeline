@@ -74,7 +74,7 @@ pipeline {
             steps {
                 dependencyCheck additionalArguments: "--scan . --format HTML --out dependency-check-report --enableExperimental --enableRetired --nvdApiKey ${NVD_API_KEY}", odcInstallation: 'DependencyCheck'
             }
-        }
+        
     post {
         always {
             archiveArtifacts artifacts: 'dependency-check-report/**', fingerprint: true
